@@ -21,7 +21,8 @@ mkdir -p "$FRAMEWORKS_DIR"
 cp .build/release/Explorer "$MACOS_DIR/"
 
 # Create Info.plist in Contents directory
-cp Explorer/Info.plist "$APP_DIR/"
+#cp Explorer/Info.plist "$APP_DIR/"
+cp Info.plist "$APP_DIR/"
 
 # Create PkgInfo
 echo "APPL????" > "$APP_DIR/PkgInfo"

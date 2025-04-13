@@ -108,7 +108,30 @@ struct ContentView: View {
         }
         return items.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
     }
-    
+
+    func collectFileURLs(
+        at url: URL,
+        options: FileManager.DirectoryEnumerationOptions
+    ) -> [URL] {
+        var results: [URL] = []
+        let fileEnumerator = FileManager.default.enumerator(
+            at: url,
+            includingPropertiesForKeys: [
+                .isDirectoryKey, .contentModificationDateKey, .fileSizeKey, .isHiddenKey
+            ],
+            options: options
+        )
+        
+        if let fileEnumerator = fileEnumerator {
+            for case let fileURL as URL in fileEnumerator {
+                results.append(fileURL)
+            }
+        }
+        
+        return results
+    }
+
+
     private func loadItems() {
         guard !isLoading else { return }
         
@@ -130,15 +153,10 @@ struct ContentView: View {
             if !shouldShowHiddenFiles {
                 options.insert(.skipsHiddenFiles)
             }
-            
-            if let fileEnumerator = FileManager.default.enumerator(
-                at: url,
-                includingPropertiesForKeys: [
-                    .isDirectoryKey, .contentModificationDateKey, .fileSizeKey, .isHiddenKey
-                ],
-                options: options
-            ) {
-                for case let fileURL as URL in fileEnumerator {
+
+            let urls = collectFileURLs(at: url, options: [.skipsHiddenFiles])
+            if !urls.isEmpty {
+                for fileURL in urls {
                     do {
                         let resourceValues = try fileURL.resourceValues(forKeys: [
                             .isDirectoryKey, .contentModificationDateKey, .fileSizeKey, .isHiddenKey
@@ -170,7 +188,15 @@ struct ContentView: View {
             
             // Update UI on the main thread
             await MainActor.run {
-                items = loadedItems.sorted(by: currentSortOrder.comparator)
+                items = loadedItems.sorted {
+                    if $0.isDirectory != $1.isDirectory {
+                        // Directories come first
+                        return $0.isDirectory && !$1.isDirectory
+                    } else {
+                        // Within the same type, apply current sort order
+                        return currentSortOrder.comparator($0, $1)
+                    }
+                }
                 isLoading = false
             }
         }

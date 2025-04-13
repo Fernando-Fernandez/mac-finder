@@ -1,6 +1,6 @@
-version: "Apple Swift version 6.0.3 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)"
-options: "dcbc31d014a47ae29f9d46d43c8f8c121f204295ea2396425c1f89e78c5e1da6"
-build_start_time: [1744505883, 245412000]
-build_end_time: [1744505884, 995372000]
+version: "Apple Swift version 6.1 (swiftlang-6.1.0.110.21 clang-1700.0.13.3)"
+options: "38de36a2b62f7201b7d05fbf8496b840494f7b7077f3dbdc3233611625a1de65"
+build_start_time: [1744577129, 886069000]
+build_end_time: [1744577131, 499384000]
 inputs:
-  "/Users/debarghya/dev/playground/explorer/Sources/main.swift": [1744505880, 482525981]
+  "/Users/fmendes/Projects/mac-finder/Sources/main.swift": [1744577121, 945482872]
