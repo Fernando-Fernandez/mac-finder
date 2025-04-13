@@ -131,7 +131,6 @@ struct ContentView: View {
         return results
     }
 
-
     private func loadItems() {
         guard !isLoading else { return }
         
@@ -154,7 +153,7 @@ struct ContentView: View {
                 options.insert(.skipsHiddenFiles)
             }
 
-            let urls = collectFileURLs(at: url, options: [.skipsHiddenFiles])
+            let urls = collectFileURLs(at: url, options: options)
             if !urls.isEmpty {
                 for fileURL in urls {
                     do {
@@ -188,13 +187,24 @@ struct ContentView: View {
             
             // Update UI on the main thread
             await MainActor.run {
-                items = loadedItems.sorted {
-                    if $0.isDirectory != $1.isDirectory {
-                        // Directories come first
-                        return $0.isDirectory && !$1.isDirectory
-                    } else {
-                        // Within the same type, apply current sort order
-                        return currentSortOrder.comparator($0, $1)
+                items = loadedItems.sorted { a, b in
+                    if a.isDirectory != b.isDirectory {
+                        return a.isDirectory && !b.isDirectory // folders first
+                    }
+                    
+                    switch currentSortOrder {
+                    case .nameAscending:
+                        return a.name.localizedStandardCompare(b.name) == .orderedAscending
+                    case .nameDescending:
+                        return a.name.localizedStandardCompare(b.name) == .orderedDescending
+                    case .dateNewest:
+                        return a.modificationDate > b.modificationDate
+                    case .dateOldest:
+                        return a.modificationDate < b.modificationDate
+                    case .sizeSmallest:
+                        return a.size < b.size
+                    case .sizeLargest:
+                        return a.size > b.size
                     }
                 }
                 isLoading = false
@@ -507,10 +517,24 @@ struct FileContentView: View {
             }
         }
         .padding()
-        .onAppear(perform: loadContent)
+        .onAppear {
+            Task {
+                await loadContent()
+            }
+        }
     }
     
-    private func loadContent() {
+    private func loadContent() async {
+
+        let maxPreviewSize: Int64 = 10 * 1024 * 1024 // 10 MB
+        guard item.size <= maxPreviewSize else {
+            await MainActor.run {
+                self.errorMessage = "Preview skipped (file too large)"
+                self.isLoading = false
+            }
+            return
+        }
+
         isLoading = true
         errorMessage = nil
         
